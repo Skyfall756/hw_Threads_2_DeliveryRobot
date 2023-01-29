@@ -16,6 +16,21 @@ public class Main {
 
     public static void main(String[] args) throws InterruptedException {
 
+        Thread logMax = new Thread(() -> {
+            while (!Thread.interrupted()) {
+                synchronized (sizeToFreq) {
+                    try {
+                        sizeToFreq.wait();
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                    System.out.println("На данный момент максимальное количество повторений: "
+                            + maxFreq(sizeToFreq).getKey() + " (" + maxFreq(sizeToFreq).getValue() + ")");
+                }
+            }
+        });
+        logMax.start();
+
         List<Thread> threads = new ArrayList<>();
         for (int i = 0; i < 1000; i++) {
             Thread thread = new Thread(() -> {
@@ -30,6 +45,7 @@ public class Main {
                     } else {
                         sizeToFreq.put(count, 1);
                     }
+                    sizeToFreq.notify();
                 }
             });
             threads.add(thread);
@@ -38,6 +54,7 @@ public class Main {
         for (Thread thread : threads) {
             thread.join();
         }
+        logMax.interrupt();
 
 
 
